@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading...</title>
+    <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
+    <style>
+      body { font-family: sans-serif; margin: 0; padding: none; color: white; background: black; }
+      canvas.emscripten { border: 0px none; width: 320px; height: 240px; max-width: 100%; max-height: 100%; position: absolute; top: 50%; left: 50%; -webkit-transform: translate(-50%, -50%); -ms-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
+      #status { font-weight: bold; color: #888888; text-align: center; margin: auto; }
+      #controls { text-align: right; } #controls input { border: 1px solid gray; background: black; color: gray; }
+      @media all and (min-width: 640px) { canvas.emscripten { width: 640px; height: 480px;
+        image-rendering: optimizeSpeed;             /* Older versions of FF          */
+        image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+        image-rendering: -webkit-optimize-contrast; /* Safari                        */
+        image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+        image-rendering: pixelated;                 /* Awesome future-browsers       */
+        -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+      } }
+      @media all and (max-width: 639px) { canvas.emscripten { width: 320px; height: 240px; } }
+    </style>
+  </head>
+  <body>
+
+    <style>#forkongithub a{background:#000;color:#fff;text-decoration:none;font-family:arial,sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:1rem;line-height:2rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#c11;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:800px){#forkongithub{position:absolute;display:block;top:0;left:0;width:200px;overflow:hidden;height:200px;z-index:9999;}#forkongithub a{width:200px;position:absolute;top:60px;left:-60px;transform:rotate(-45deg);-webkit-transform:rotate(-45deg);-ms-transform:rotate(-45deg);-moz-transform:rotate(-45deg);-o-transform:rotate(-45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}
+    </style>
+    <span id="forkongithub"><a href="https://github.com/mad4j/rogue.js">Fork me on GitHub</a></span>
+
+    <div id="controls"><input type="button" value="Full screen" onclick="if (Module.requestFullScreen) Module.requestFullScreen()"></div>
+
+    <div id="status">Downloading...</div>
+
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+
+    <script type='text/javascript'>
+      var statusElement = document.getElementById('status');
+
+      var Module = {
+        preRun: [],
+        postRun: [],
+        print: (function() {
+          var element = document.getElementById('output');
+          if (element) element.value = ''; // clear browser cache
+          return function(text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            console.log(text);
+            if (element) {
+              element.value += text + "\n";
+              element.scrollTop = element.scrollHeight; // focus on bottom
+            }
+          };
+        })(),
+        printErr: function(text) {
+          if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+          console.error(text);
+        },
+        canvas: (function() {
+          var canvas = document.getElementById('canvas');
+
+          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
+          // application robust, you may want to override this behavior before shipping!
+          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+          canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
+
+          return canvas;
+        })(),
+        setStatus: function(text) {
+          if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+          if (text === Module.setStatus.text) return;
+          statusElement.innerHTML = text;
+        },
+        totalDependencies: 0,
+        monitorRunDependencies: function(left) {
+          this.totalDependencies = Math.max(this.totalDependencies, left);
+          Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'Downloading game data...');
+        }
+      };
+      Module.setStatus('Downloading...');
+      window.onerror = function(event) {
+        Module.setStatus('Exception thrown, see JavaScript console');
+        Module.setStatus = function(text) {
+          if (text) Module.printErr('[post-exception status] ' + text);
+        };
+      };
+    </script>
+
+    <script>
+var ASSERTIONS = 2;
+// Prefix of data URIs emitted by SINGLE_FILE and related options.
+var dataURIPrefix = 'data:application/octet-stream;base64,';
+
+// Indicates whether filename is a base64 data URI.
+function isDataURI(filename) {
+  return String.prototype.startsWith ?
+      filename.startsWith(dataURIPrefix) :
+      filename.indexOf(dataURIPrefix) === 0;
+}
+
+// Copied from https://github.com/strophe/strophejs/blob/e06d027/src/polyfills.js#L149
+
+// This code was written by Tyler Akins and has been placed in the
+// public domain.  It would be nice if you left this header intact.
+// Base64 code from Tyler Akins -- http://rumkin.com
+
+/**
+ * Decodes a base64 string.
+ * @param {String} input The string to decode.
+ */
+var decodeBase64 = typeof atob === 'function' ? atob : function (input) {
+  var keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+  var output = '';
+  var chr1, chr2, chr3;
+  var enc1, enc2, enc3, enc4;
+  var i = 0;
+  // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
+  input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
+  do {
+    enc1 = keyStr.indexOf(input.charAt(i++));
+    enc2 = keyStr.indexOf(input.charAt(i++));
+    enc3 = keyStr.indexOf(input.charAt(i++));
+    enc4 = keyStr.indexOf(input.charAt(i++));
+
+    chr1 = (enc1 << 2) | (enc2 >> 4);
+    chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    chr3 = ((enc3 & 3) << 6) | enc4;
+
+    output = output + String.fromCharCode(chr1);
+
+    if (enc3 !== 64) {
+      output = output + String.fromCharCode(chr2);
+    }
+    if (enc4 !== 64) {
+      output = output + String.fromCharCode(chr3);
+    }
+  } while (i < input.length);
+  return output;
+};
+
+// Converts a string of base64 into a byte array.
+// Throws error on invalid input.
+function intArrayFromBase64(s) {
+  if (typeof ENVIRONMENT_IS_NODE === 'boolean' && ENVIRONMENT_IS_NODE) {
+    var buf;
+    try {
+      buf = Buffer.from(s, 'base64');
+    } catch (_) {
+      buf = new Buffer(s, 'base64');
+    }
+    return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  }
+
+  try {
+    var decoded = decodeBase64(s);
+    var bytes = new Uint8Array(decoded.length);
+    for (var i = 0 ; i < decoded.length ; ++i) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+    return bytes;
+  } catch (_) {
+    throw new Error('Converting base64 string to bytes failed.');
+  }
+}
+
+// If filename is a base64 data URI, parses and returns data (Buffer on node,
+// Uint8Array otherwise). If filename is not a base64 data URI, returns undefined.
+function tryParseAsDataURI(filename) {
+  if (!isDataURI(filename)) {
+    return;
+  }
+
+  return intArrayFromBase64(filename.slice(dataURIPrefix.length));
+}
+/** @type {function(string, boolean=, number=)} */
+function intArrayFromString(stringy, dontAddNull, length) {
+  var len = length > 0 ? length : lengthBytesUTF8(stringy)+1;
+  var u8array = new Array(len);
+  var numBytesWritten = stringToUTF8Array(stringy, u8array, 0, u8array.length);
+  if (dontAddNull) u8array.length = numBytesWritten;
+  return u8array;
+}
+
+function intArrayToString(array) {
+  var ret = [];
+  for (var i = 0; i < array.length; i++) {
+    var chr = array[i];
+    if (chr > 0xFF) {
+      if (ASSERTIONS) {
+        assert(false, 'Character code ' + chr + ' (' + String.fromCharCode(chr) + ')  at offset ' + i + ' not in 0x00-0xFF.');
+      }
+      chr &= 0xFF;
+    }
+    ret.push(String.fromCharCode(chr));
+  }
+  return ret.join('');
+}
+
+          var wasmURL = 'roguejs.1.0.0-90.wasm';
+          var wasmXHR = new XMLHttpRequest();
+          wasmXHR.open('GET', wasmURL, true);
+          wasmXHR.responseType = 'arraybuffer';
+          wasmXHR.onload = function() {
+            if (wasmXHR.status === 200 || wasmXHR.status === 0) {
+              Module.wasmBinary = wasmXHR.response;
+            } else {
+              var wasmURLBytes = tryParseAsDataURI(wasmURL);
+              if (wasmURLBytes) {
+                Module.wasmBinary = wasmURLBytes.buffer;
+              }
+            }
+
+          var script = document.createElement('script');
+          script.src = "roguejs.1.0.0-90.js";
+          document.body.appendChild(script);
+
+          };
+          wasmXHR.send(null);
+
+</script>
+
+  </body>
+</html>
+
